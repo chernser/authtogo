@@ -1,10 +1,13 @@
 package main
 
-import (
-	"./oauth2"
-	"github.com/valyala/fasthttp"
-	"fmt"
+import (	
 	"net/http"
+
+	"github.com/valyala/fasthttp"
+	_ "github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+	
+	"./oauth2"
 )
 
 type AuthServer struct {
@@ -12,23 +15,24 @@ type AuthServer struct {
 }
 
 func (srv *AuthServer) HandleRequest(ctx *fasthttp.RequestCtx) {
-	fmt.Printf("Path is %s\n", ctx.Path())
+	log.Debug().Msgf("Handling request: %s", ctx.Path())
 	switch (string(ctx.Path())) {
 	case "/auth/oauth2/authorize":
 		fallthrough
 	case "/auth/oauth2/token":
-		fmt.Printf("Going to handle oauth2\n")
 		srv.OAuth2Handler.RequestHandler(ctx)
 		break
 	default: 
-		fmt.Printf("Unknown authentication\n")
+		log.Error().Msg("Unknown auth request")
 		ctx.Error("Unknown authentication mechanis", http.StatusNotFound)
 	}
-	fmt.Printf("Request handled\n")
+	log.Debug().Msg("Request handled")
 }
 
 func main() {
-	fmt.Printf("Starting Auth Service\n")
+	log.Info().Msg("Starting Auth Service")
+	
+	initConfiguration()
 	srvCtx := &AuthServer{
 		OAuth2Handler: oauth2.InitOAuth2Server(),
 

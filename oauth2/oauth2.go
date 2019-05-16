@@ -1,17 +1,16 @@
 package oauth2
 
 import (
-	"github.com/valyala/fasthttp"
-	"github.com/valyala/fasthttp/fasthttpadaptor"
-	
-	"fmt"
 	"net/http"
 
+	"github.com/valyala/fasthttp"
+	"github.com/valyala/fasthttp/fasthttpadaptor"	
 	"gopkg.in/oauth2.v3/errors"
 	"gopkg.in/oauth2.v3/manage"
 	"gopkg.in/oauth2.v3/models"
 	"gopkg.in/oauth2.v3/server"
 	"gopkg.in/oauth2.v3/store"
+	"github.com/rs/zerolog/log"
 )
 
 type OAuth2Server struct {
@@ -19,16 +18,17 @@ type OAuth2Server struct {
 	RequestHandler fasthttp.RequestHandler 
 }
 
-func (srv *OAuth2Server) HandleOauth2Authorize(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("Handling oauth\n")
-
+func (srv *OAuth2Server) HandleOauth2Authorize(w http.ResponseWriter, r *http.Request) {	
+	
 	switch string(r.URL.Path) {
 	case "/auth/oauth2/authorize":		
+		log.Debug().Msg("Handling OAuth2 authorize request")
 		err := srv.SrvImpl.HandleAuthorizeRequest(w, r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 	case "/auth/oauth2/token":	
+		log.Debug().Msg("Handling OAuth2 token request")
 		srv.SrvImpl.HandleTokenRequest(w, r)
 	}
 }
@@ -51,12 +51,12 @@ func InitOAuth2Server() (*OAuth2Server) {
 	srvImpl.SetAllowGetAccessRequest(true)
 	srvImpl.SetClientInfoHandler(server.ClientFormHandler)
 	srvImpl.SetInternalErrorHandler(func(err error) (re *errors.Response) {
-		// log.Println("Internal Error:", err.Error())
+		log.Error().Msgf("Internal Error: %s", err.Error())
 		return
 	})
 
 	srvImpl.SetResponseErrorHandler(func(re *errors.Response) {
-		// log.Println("Response Error:", re.Error.Error())
+		log.Error().Msgf("Response Error: %s", re.Error.Error())
 	})
 	server := OAuth2Server{}
 	server.SrvImpl = srvImpl
