@@ -32,18 +32,22 @@ func (srv *AuthServer) handleOAuthTokenRequest(ctx *fasthttp.RequestCtx) {
 func main() {
 	log.Info().Msg("Starting Auth Service")
 	
-	initConfiguration()
+	samlSpConfig := &saml.SamlSPServerConfig{
+		Cert: "./myservice.cert",
+		Key: "./myservice.key",
+	}
+
+	OAuth2AuthorizePath := "/auth/oauth2/authorize"
+	OAuth2TokenPath := "/auth/oauth2/token"
+	
 	srvCtx := &AuthServer{		
 		OAuth2Handler: oauth2.InitOAuth2Server(),
-		OAuth2AuthorizePath: "/auth/oauth2/authorize",
-		OAuth2TokenPath: "/auth/oauth2/token",
-		SamlSPServer: saml.InitSamlSPServer(nil),
-
+		SamlSPServer: saml.InitSamlSPServer(samlSpConfig),
 	}
 
 	router := fasthttprouter.New()
-	router.POST(srvCtx.OAuth2AuthorizePath, srvCtx.handleOAuthAuthorize)
-	router.POST(srvCtx.OAuth2TokenPath, srvCtx.handleOAuthTokenRequest)
+	router.POST(OAuth2AuthorizePath, srvCtx.handleOAuthAuthorize)
+	router.POST(OAuth2TokenPath, srvCtx.handleOAuthTokenRequest)
 
 	fasthttp.ListenAndServe(":8088", router.Handler)
 }

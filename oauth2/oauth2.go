@@ -34,6 +34,7 @@ func (srv *OAuth2Server) HandleOauth2Authorize(w http.ResponseWriter, r *http.Re
 }
 
 func InitOAuth2Server() (*OAuth2Server) {
+	log.Info().Msg("Init OAuth2 Server")
 	manager := manage.NewDefaultManager()
 	// token memory store
 	manager.MustTokenStorage(store.NewMemoryTokenStore())
