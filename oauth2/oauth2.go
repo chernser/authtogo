@@ -11,11 +11,12 @@ import (
 	"gopkg.in/oauth2.v3/server"
 	"gopkg.in/oauth2.v3/store"
 	"github.com/rs/zerolog/log"
+
+	"../auth"
 )
 
-type OAuth2Server struct {
+type OAuth2Server struct {	
 	SrvImpl *server.Server
-	RequestHandler fasthttp.RequestHandler 
 }
 
 func (srv *OAuth2Server) HandleOauth2Authorize(w http.ResponseWriter, r *http.Request) {	
@@ -61,7 +62,7 @@ func InitOAuth2Server() (*OAuth2Server) {
 	})
 	server := OAuth2Server{}
 	server.SrvImpl = srvImpl
-	server.RequestHandler = fasthttpadaptor.NewFastHTTPHandlerFunc(server.HandleOauth2Authorize)
+	
 
 	return &server
 }
