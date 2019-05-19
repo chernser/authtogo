@@ -3,39 +3,51 @@ package oauth2
 import (
 	"net/http"
 
-	"github.com/valyala/fasthttp"
-	"github.com/valyala/fasthttp/fasthttpadaptor"	
+	//	"github.com/valyala/fasthttp"
+	//	"github.com/valyala/fasthttp/fasthttpadaptor"
+
+	"github.com/rs/zerolog/log"
+	"github.com/valyala/fasthttp/fasthttpadaptor"
 	"gopkg.in/oauth2.v3/errors"
 	"gopkg.in/oauth2.v3/manage"
 	"gopkg.in/oauth2.v3/models"
 	"gopkg.in/oauth2.v3/server"
 	"gopkg.in/oauth2.v3/store"
-	"github.com/rs/zerolog/log"
 
 	"../auth"
 )
 
-type OAuth2Server struct {	
-	SrvImpl *server.Server
+type OAuth2Server struct {
+	impl *server.Server
 }
 
-func (srv *OAuth2Server) HandleOauth2Authorize(w http.ResponseWriter, r *http.Request) {	
-	
-	switch string(r.URL.Path) {
-	case "/auth/oauth2/authorize":		
-		log.Debug().Msg("Handling OAuth2 authorize request")
-		err := srv.SrvImpl.HandleAuthorizeRequest(w, r)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
-	case "/auth/oauth2/token":	
-		log.Debug().Msg("Handling OAuth2 token request")
-		srv.SrvImpl.HandleTokenRequest(w, r)
+func (srv *OAuth2Server) handleOauth2Authorize(w http.ResponseWriter, r *http.Request) {
+	log.Debug().Msg("Handling OAuth2 authorize request")
+	err := srv.impl.HandleAuthorizeRequest(w, r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 }
 
-func InitOAuth2Server() (*OAuth2Server) {
+func (srv *OAuth2Server) handleOauth2Token(w http.ResponseWriter, r *http.Request) {
+	log.Debug().Msg("Handling OAuth2 token request")
+	srv.impl.HandleTokenRequest(w, r)
+}
+
+func InitOAuth2Server(aServer auth.AuthServer) *OAuth2Server {
 	log.Info().Msg("Init OAuth2 Server")
+
+	oauthServer := &OAuth2Server{}
+	oauthServer.setupImpl()
+
+	aServer.RegisterRoute("POST", "/auth/oauth2/authorize", fasthttpadaptor.NewFastHTTPHandlerFunc(oauthServer.handleOauth2Authorize))
+	aServer.RegisterRoute("POST", "/auth/oauth2/token", fasthttpadaptor.NewFastHTTPHandlerFunc(oauthServer.handleOauth2Token))
+
+	return oauthServer
+}
+
+func (srv *OAuth2Server) setupImpl() {
+	// General setup
 	manager := manage.NewDefaultManager()
 	// token memory store
 	manager.MustTokenStorage(store.NewMemoryTokenStore())
@@ -60,9 +72,6 @@ func InitOAuth2Server() (*OAuth2Server) {
 	srvImpl.SetResponseErrorHandler(func(re *errors.Response) {
 		log.Error().Msgf("Response Error: %s", re.Error.Error())
 	})
-	server := OAuth2Server{}
-	server.SrvImpl = srvImpl
-	
 
-	return &server
+	srv.impl = srvImpl
 }

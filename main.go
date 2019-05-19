@@ -1,53 +1,76 @@
 package main
 
-import (	
+import (
 	// "net/http"
 
-	"github.com/valyala/fasthttp"
 	"github.com/buaazp/fasthttprouter"
+	"github.com/valyala/fasthttp"
+
 	// "github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	
+
+	"./auth"
 	"./oauth2"
 	"./saml"
 )
 
-type AuthServer struct {
-	OAuth2Handler *oauth2.OAuth2Server
-	OAuth2AuthorizePath string
-	OAuth2TokenPath string
+type AuthServerImpl struct {
+	auth.AuthServer
+	router       *fasthttprouter.Router
+	OAuth2Server *oauth2.OAuth2Server
 	SamlSPServer *saml.SamlSPServer
 }
 
-func (srv *AuthServer) handleOAuthAuthorize(ctx *fasthttp.RequestCtx) {
-	log.Debug().Msgf("Handling request: %s", ctx.Path())
-	srv.OAuth2Handler.RequestHandler(ctx)
-}
+func (aServer *AuthServerImpl) RegisterRoute(method string, path string, handler fasthttp.RequestHandler) {
 
-func (srv *AuthServer) handleOAuthTokenRequest(ctx *fasthttp.RequestCtx) {
-	log.Debug().Msgf("Handling request: %s", ctx.Path())
-	srv.OAuth2Handler.RequestHandler(ctx)
+	log.Info().Msgf("RegisterRoute %s %s", method, path)
+	switch method {
+	case "POST":
+		aServer.router.POST(path, handler)
+	case "GET":
+		aServer.router.GET(path, handler)
+	default:
+		log.Error().Msgf("Failed to register route %s %s ", method, path)
+	}
 }
 
 func main() {
 	log.Info().Msg("Starting Auth Service")
-	
+
+	aServer := &AuthServerImpl{}
+
+	aServer.init()
+	aServer.readConfig()
+
+	aServer.setupOAuth2Server()
+	// aServer.setupSAMLSPServer()
+
+	aServer.start()
+}
+
+func (aServer *AuthServerImpl) init() {
+	aServer.router = fasthttprouter.New()
+}
+
+func (aServer *AuthServerImpl) readConfig() {
+
+}
+
+func (aServer *AuthServerImpl) setupOAuth2Server() {
+	aServer.OAuth2Server = oauth2.InitOAuth2Server(aServer)
+
+}
+
+func (aServer *AuthServerImpl) setupSAMLSPServer() {
 	samlSpConfig := &saml.SamlSPServerConfig{
 		Cert: "./myservice.cert",
-		Key: "./myservice.key",
+		Key:  "./myservice.key",
 	}
 
-	OAuth2AuthorizePath := "/auth/oauth2/authorize"
-	OAuth2TokenPath := "/auth/oauth2/token"
-	
-	srvCtx := &AuthServer{		
-		OAuth2Handler: oauth2.InitOAuth2Server(),
-		SamlSPServer: saml.InitSamlSPServer(samlSpConfig),
-	}
+	aServer.SamlSPServer = saml.InitSamlSPServer(aServer, samlSpConfig)
 
-	router := fasthttprouter.New()
-	router.POST(OAuth2AuthorizePath, srvCtx.handleOAuthAuthorize)
-	router.POST(OAuth2TokenPath, srvCtx.handleOAuthTokenRequest)
+}
 
-	fasthttp.ListenAndServe(":8088", router.Handler)
+func (aServer *AuthServerImpl) start() {
+	fasthttp.ListenAndServe(":8088", aServer.router.Handler)
 }

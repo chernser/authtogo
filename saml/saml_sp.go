@@ -6,23 +6,25 @@ import (
 	"crypto/x509"
 	"net/url"
 
-	"github.com/rs/zerolog/log"
 	"github.com/crewjam/saml/samlsp"
+	"github.com/rs/zerolog/log"
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fasthttp/fasthttpadaptor"
+
+	"../auth"
 )
 
 type SamlSPServerConfig struct {
-	Key string
+	Key  string
 	Cert string
 }
 
-type SamlSPServer struct { 
-	Impl *samlsp.Middleware
-	RequestHandler fasthttp.RequestHandler 
+type SamlSPServer struct {
+	Impl           *samlsp.Middleware
+	RequestHandler fasthttp.RequestHandler
 }
 
-func InitSamlSPServer(config *SamlSPServerConfig) (*SamlSPServer) {
+func InitSamlSPServer(aServer auth.AuthServer, config *SamlSPServerConfig) *SamlSPServer {
 	log.Info().Msg("Init SAML SP Server")
 
 	keyPair, err := tls.LoadX509KeyPair(config.Cert, config.Key)
@@ -45,15 +47,15 @@ func InitSamlSPServer(config *SamlSPServerConfig) (*SamlSPServer) {
 	}
 
 	samlSP, _ := samlsp.New(samlsp.Options{
-		URL:            *rootURL,
-		Key:            keyPair.PrivateKey.(*rsa.PrivateKey),
-		Certificate:    keyPair.Leaf,
-		IDPMetadataURL: idpMetadataURL,
+		URL:               *rootURL,
+		Key:               keyPair.PrivateKey.(*rsa.PrivateKey),
+		Certificate:       keyPair.Leaf,
+		IDPMetadataURL:    idpMetadataURL,
 		AllowIDPInitiated: true,
 	})
 
 	server := &SamlSPServer{
-		Impl: samlSP,
+		Impl:           samlSP,
 		RequestHandler: fasthttpadaptor.NewFastHTTPHandlerFunc(samlSP.ServeHTTP),
 	}
 
