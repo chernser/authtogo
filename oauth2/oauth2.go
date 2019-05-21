@@ -18,14 +18,20 @@ import (
 )
 
 type OAuth2Server struct {
-	impl *server.Server
+	impl           *server.Server
+	sessionManager auth.SessionManager
 }
 
 func (srv *OAuth2Server) handleOauth2Authorize(w http.ResponseWriter, r *http.Request) {
 	log.Debug().Msg("Handling OAuth2 authorize request")
-	err := srv.impl.HandleAuthorizeRequest(w, r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+
+	if srv.sessionManager.IsAuthenticated(r) {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	} else {
+		err := srv.impl.HandleAuthorizeRequest(w, r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
 	}
 }
 
@@ -34,7 +40,9 @@ func (srv *OAuth2Server) handleOauth2Token(w http.ResponseWriter, r *http.Reques
 	srv.impl.HandleTokenRequest(w, r)
 }
 
-func InitOAuth2Server(aServer auth.AuthServer) *OAuth2Server {
+// InitOAuth2Server - Initializes OAuth2 module to authorize
+// requires auth.AuthServer to register routes and auth.SessionManager to register sessions
+func InitOAuth2Server(aServer auth.AuthServer, sessionManager auth.SessionManager) *OAuth2Server {
 	log.Info().Msg("Init OAuth2 Server")
 
 	oauthServer := &OAuth2Server{}
