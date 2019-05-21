@@ -26,6 +26,7 @@ func (srv *OAuth2Server) handleOauth2Authorize(w http.ResponseWriter, r *http.Re
 	log.Debug().Msg("Handling OAuth2 authorize request")
 
 	if srv.sessionManager.IsAuthenticated(r) {
+
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 	} else {
 		err := srv.impl.HandleAuthorizeRequest(w, r)
