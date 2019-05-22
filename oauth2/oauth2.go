@@ -48,6 +48,7 @@ func InitOAuth2Server(aServer auth.AuthServer, sessionManager auth.SessionManage
 
 	oauthServer := &OAuth2Server{}
 	oauthServer.setupImpl()
+	oauthServer.initializeAuthStore()
 
 	aServer.RegisterRoute("POST", "/auth/oauth2/authorize", fasthttpadaptor.NewFastHTTPHandlerFunc(oauthServer.handleOauth2Authorize))
 	aServer.RegisterRoute("POST", "/auth/oauth2/token", fasthttpadaptor.NewFastHTTPHandlerFunc(oauthServer.handleOauth2Token))
@@ -83,4 +84,8 @@ func (srv *OAuth2Server) setupImpl() {
 	})
 
 	srv.impl = srvImpl
+}
+
+func (srv *OAuth2Server) initializeAuthStore() {
+
 }

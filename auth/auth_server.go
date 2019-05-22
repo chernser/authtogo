@@ -10,6 +10,12 @@ type AuthServer interface {
 	//  Registers route for method and path to handler
 	//  Used by authentication modules to register their routes
 	RegisterRoute(Method string, Path string, Handler fasthttp.RequestHandler)
+
+	// GetVolatileStorage returns volatile storage for tokens and runtime information
+	GetVolatileStorage() Storage
+
+	// GetSecretsStorage returns storage of secrets
+	GetSecretsStorage() Storage
 }
 
 // SessionManager - manages sessions. Thats it.
@@ -22,4 +28,14 @@ type SessionManager interface {
 
 	// IsAuthenticated returns true if context contains information about authenticated session
 	IsAuthenticated(context interface{}) bool
+}
+
+// Storage defines behaviour of authentication storage used for tokens and secrets
+// Server uses one storage for tokens what is very volatile information,
+// and for accessing secrets what is more stable information
+// In general both storages are similar in way accessing data.
+type Storage interface {
+
+	// Return string values of fields for row identified by id
+	GetFieldsOfRow(id string, fields []string) map[string]string
 }
