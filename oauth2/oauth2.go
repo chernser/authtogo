@@ -8,6 +8,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/valyala/fasthttp/fasthttpadaptor"
+	"gopkg.in/oauth2.v3"
 	"gopkg.in/oauth2.v3/errors"
 	"gopkg.in/oauth2.v3/manage"
 	"gopkg.in/oauth2.v3/models"
@@ -17,16 +18,18 @@ import (
 	"../auth"
 )
 
+// OAuth2Server describes authentication server for oauth2
 type OAuth2Server struct {
 	impl           *server.Server
 	sessionManager auth.SessionManager
+	tokenStore     oauth2.TokenStore
+	clientStore    oauth2.ClientStore
 }
 
 func (srv *OAuth2Server) handleOauth2Authorize(w http.ResponseWriter, r *http.Request) {
 	log.Debug().Msg("Handling OAuth2 authorize request")
 
 	if srv.sessionManager.IsAuthenticated(r) {
-
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 	} else {
 		err := srv.impl.HandleAuthorizeRequest(w, r)
@@ -47,8 +50,9 @@ func InitOAuth2Server(aServer auth.AuthServer, sessionManager auth.SessionManage
 	log.Info().Msg("Init OAuth2 Server")
 
 	oauthServer := &OAuth2Server{}
+	oauthServer.setupTokenStorage(aServer.GetVolatileStorage())
+	oauthServer.setupSecretsStorage(aServer.GetSecretsStorage())
 	oauthServer.setupImpl()
-	oauthServer.initializeAuthStore()
 
 	aServer.RegisterRoute("POST", "/auth/oauth2/authorize", fasthttpadaptor.NewFastHTTPHandlerFunc(oauthServer.handleOauth2Authorize))
 	aServer.RegisterRoute("POST", "/auth/oauth2/token", fasthttpadaptor.NewFastHTTPHandlerFunc(oauthServer.handleOauth2Token))
@@ -86,6 +90,30 @@ func (srv *OAuth2Server) setupImpl() {
 	srv.impl = srvImpl
 }
 
-func (srv *OAuth2Server) initializeAuthStore() {
+func (srv *OAuth2Server) setupTokenStorage(volatileStorage auth.Storage) {
+	// srv.tokenStore = &tokenStoreImpl{
+	// 	Storage: volatileStorage,
+	// }
+}
 
+func (srv *OAuth2Server) setupSecretsStorage(storage auth.Storage) {
+	srv.clientStore = &clientStoreImpl{
+		Storage: storage,
+	}
+}
+
+type tokenStoreImpl struct {
+	Storage auth.Storage
+}
+
+// clientStoreImpl is adapter between oauth2 store and auth store
+type clientStoreImpl struct {
+	Storage auth.Storage
+}
+
+func (store *clientStoreImpl) GetByID(id string) (oauth2.ClientInfo, error) {
+
+	// info := &oauth2.ClientInfo{}
+
+	return nil, nil
 }

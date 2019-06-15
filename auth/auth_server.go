@@ -36,6 +36,10 @@ type SessionManager interface {
 // In general both storages are similar in way accessing data.
 type Storage interface {
 
-	// Return string values of fields for row identified by id
-	GetFieldsOfRow(id string, fields []string) map[string]string
+	// Return map of fields representing the row. second tuple argument is true
+	// if value exists, otherwise false
+	GetFieldsOfRow(id string, fields []string) (map[string]string, bool)
+
+	// Sets row information
+	SetFieldsOfRow(id string, fields map[string]string)
 }

@@ -3,6 +3,7 @@ package main
 import (
 	// "net/http"
 
+	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -10,14 +11,16 @@ import (
 	"github.com/buaazp/fasthttprouter"
 	"github.com/valyala/fasthttp"
 
-	// "github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
+	"github.com/spf13/viper"
 
 	"./auth"
 	"./oauth2"
 	"./saml"
 )
 
+// Authentication server joining structure
 type AuthServerImpl struct {
 	auth.AuthServer
 	router         *fasthttprouter.Router
@@ -102,7 +105,15 @@ func (aServer *AuthServerImpl) init() {
 }
 
 func (aServer *AuthServerImpl) readConfig() {
+	viper.SetConfigFile("authserver.yaml")
+	viper.AddConfigPath(".")
+	err := viper.ReadInConfig()
+	if err != nil {
+		panic(fmt.Errorf("Failed to read configuration: %s.\n", err))
+	}
 
+	test := viper.GetString("val1")
+	fmt.Printf("this is val1: %s.\n", test)
 }
 
 func (aServer *AuthServerImpl) setupSessionManager() {
@@ -127,4 +138,16 @@ func (aServer *AuthServerImpl) setupSAMLSPServer() {
 
 func (aServer *AuthServerImpl) start() {
 	fasthttp.ListenAndServe(":8088", aServer.router.Handler)
+}
+
+// GetVolatileStorage returns configured volatile storage suitable for storing runtime
+// data such as tokens
+func (aServer *AuthServerImpl) GetVolatileStorage() auth.Storage {
+	return nil
+}
+
+// GetSecretsStorage returns storage where user secret (like keys, password hashes etc)
+// are stored. This storage usually composite one what solves integration problems
+func (aServer *AuthServerImpl) GetSecretsStorage() auth.Storage {
+	return nil
 }
