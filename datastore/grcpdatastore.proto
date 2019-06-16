@@ -1,0 +1,158 @@
+syntax = "proto3";
+
+package authtogo.datastore;
+
+/** 
+    Service implementing accessing volatile datastore
+    This is good choice for integrating custom auth service
+    to share tokens. 
+*/
+service VolatileDataStore {
+    /**
+        GetRow returns row by id or empty record. 
+        This method mainly used to get information about the token.         
+    */
+    rpc GetRow(GetRowRequest) returns (GetRowResponse);
+
+    /** 
+        Inserts row into a datastore.
+    */
+    rpc InsertRow(InsertRowRequest) returns (InsertRowResponse);
+
+    /**
+        PutRow updates the record in the datastore.
+    */
+    rpc PutRow(PutRowRequest) returns (PutRowResponse);
+
+    /**
+        DeleteRow erases the record. 
+    */
+    rpc DeleteRow(DeleteRowRequest) returns (DeleteRowResponse);
+}
+
+/** 
+    Defines request for GetRow method.     
+*/
+message GetRowRequest {
+    /**
+        Id of the row. Typically is token id.
+    */
+    string Id = 1;
+
+    /**
+        List of fields to be returned in response.
+    */
+    repeated string Fields = 2;
+}
+
+/** 
+    Defines response for GetRow method
+*/
+message GetRowResponse {
+    /**
+        Flag indicates if error happened while invokation. 
+        If this field = true, then ErrorMsg should contain some message.
+    */
+    bool IsError = 1;
+
+    /**
+        Error message which will be recorded in the log of the server.
+        Message will not be shown to user. 
+    */
+    string ErrorMsg = 2;
+
+    /**
+        Mapped value of row fields. 
+        If empty - means no data found. 
+    */
+    map<string, string> Row = 3;
+}
+
+/** 
+    Defines request for InsertRow method
+*/
+message InsertRowRequest {
+    /**
+        Id of the row. Typically is token id.
+    */
+    string Id = 1;
+
+    /**
+        Mapped value of row fields. 
+        Empty map should trigger an error. It is not allowed to put 
+        empty row into store.
+    */
+    map<string, string> Row = 2;
+}
+
+/** 
+    Defines response of InsertRow method
+*/
+message InsertRowResponse {
+    /** 
+        Flag indicates if error has occured while invokation.
+    */
+    bool IsError = 1;
+
+    /**
+        Error message if any.
+    */
+    string ErrorMsg = 2;
+}
+
+/** 
+    Defines request for PutRow method
+*/
+message PutRowRequest {
+    /**
+        Id of the row. Typically is token id.
+    */
+    string Id = 1;
+
+    /**
+        Mapped value of row fields. 
+        Empty map should trigger an error. It is not allowed to put 
+        empty row into store.
+    */
+    map<string, string> Row = 2;
+}
+
+/** 
+    Defines response of PutRow method
+*/
+message PutRowResponse {
+    /** 
+        Flag indicates if error has occured while invokation.
+    */
+    bool IsError = 1;
+
+    /**
+        Error message if any.
+    */
+    string ErrorMsg = 2;
+}
+
+/** 
+    Defines request of DeleteRow method.
+*/
+message DeleteRowRequest { 
+    /**
+        Id of the row. Typically is token id.
+    */
+    string Id = 1;
+}
+
+/** 
+    Defines response of DeleteRow method
+*/
+message DeleteRowResponse {
+    /** 
+        Flag indicates if error has occured while invokation.
+    */
+    bool IsError = 1;
+
+    /**
+        Error message if any.
+    */
+    string ErrorMsg = 2;
+}

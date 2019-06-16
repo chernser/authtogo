@@ -36,10 +36,15 @@ type SessionManager interface {
 // In general both storages are similar in way accessing data.
 type Storage interface {
 
-	// Return map of fields representing the row. second tuple argument is true
-	// if value exists, otherwise false
-	GetFieldsOfRow(id string, fields []string) (map[string]string, bool)
+	// Get returns mapped values for row with rowId
+	Get(rowID string, fields []string) (map[string]string, bool)
 
-	// Sets row information
-	SetFieldsOfRow(id string, fields map[string]string)
+	// Insert records row under rowID and with provided values. Returns true if success
+	Insert(rowID string, values map[string]string) bool
+
+	// Update records new values in the row.
+	Update(rowID string, values map[string]string) bool
+
+	// Delete removes record from store.
+	Delete(rowID string) bool
 }

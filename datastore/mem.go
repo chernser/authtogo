@@ -11,8 +11,8 @@ type InMemoryStorage struct {
 	storage map[string]map[string]string
 }
 
-// GetFieldsOfRow - returns fields for requested row
-func (mem *InMemoryStorage) GetFieldsOfRow(id string, fields []string) (map[string]string, bool) {
+// Get returns fields for requested row
+func (mem *InMemoryStorage) Get(id string, fields []string) (map[string]string, bool) {
 	mem.lock.RLock()
 	defer mem.lock.RUnlock()
 	value, ok := mem.storage[id]
@@ -22,10 +22,39 @@ func (mem *InMemoryStorage) GetFieldsOfRow(id string, fields []string) (map[stri
 	return nil, false
 }
 
-func (mem *InMemoryStorage) SetFieldsOfRow(id string, fields map[string]string) {
+// Insert records new record to store
+func (mem *InMemoryStorage) Insert(id string, values map[string]string) bool {
 	mem.lock.Lock()
 	defer mem.lock.Unlock()
-	mem.storage[id] = fields
+
+	if mem.storage[id] != nil {
+		return false
+	}
+
+	mem.storage[id] = values
+	return true
+}
+
+// Update records new values
+func (mem *InMemoryStorage) Update(id string, values map[string]string) bool {
+	mem.lock.Lock()
+	defer mem.lock.Unlock()
+	if mem.storage[id] == nil {
+		return false
+	}
+	mem.storage[id] = values
+	return true
+}
+
+// Delete removes record from datastore
+func (mem *InMemoryStorage) Delete(id string) bool {
+	mem.lock.Lock()
+	defer mem.lock.Unlock()
+	if mem.storage[id] == nil {
+		return false
+	}
+	delete(mem.storage, id)
+	return true
 }
 
 func CreateMemoryStorage() *InMemoryStorage {
