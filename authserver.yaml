@@ -1,3 +1,11 @@
 ---
 
 val1: "this is test configuration value"
+
+
+# Storage configuration 
+storage:
+  volatile:
+    type: mem
+  secrets:
+    type: mem

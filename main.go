@@ -16,6 +16,7 @@ import (
 	"github.com/spf13/viper"
 
 	"./auth"
+	"./datastore"
 	"./oauth2"
 	"./saml"
 )
@@ -23,10 +24,12 @@ import (
 // Authentication server joining structure
 type AuthServerImpl struct {
 	auth.AuthServer
-	router         *fasthttprouter.Router
-	sessionManager auth.SessionManager
-	OAuth2Server   *oauth2.OAuth2Server
-	SamlSPServer   *saml.SamlSPServer
+	router          *fasthttprouter.Router
+	sessionManager  auth.SessionManager
+	OAuth2Server    *oauth2.OAuth2Server
+	SamlSPServer    *saml.SamlSPServer
+	volatileStorage auth.Storage
+	secretsStorage  auth.Storage
 }
 
 // RegisterRoute adds route and handler to internal router
@@ -95,7 +98,7 @@ func main() {
 	aServer.setupSessionManager()
 
 	aServer.setupOAuth2Server()
-	// aServer.setupSAMLSPServer()
+	aServer.setupSAMLSPServer()
 
 	aServer.start()
 }
@@ -112,8 +115,9 @@ func (aServer *AuthServerImpl) readConfig() {
 		panic(fmt.Errorf("Failed to read configuration: %s.\n", err))
 	}
 
-	test := viper.GetString("val1")
-	fmt.Printf("this is val1: %s.\n", test)
+	aServer.volatileStorage = datastore.CreateVolatileDataStore(viper.GetViper())
+	aServer.secretsStorage = datastore.CreateSecretsDataStore(viper.GetViper())
+
 }
 
 func (aServer *AuthServerImpl) setupSessionManager() {
@@ -122,18 +126,26 @@ func (aServer *AuthServerImpl) setupSessionManager() {
 }
 
 func (aServer *AuthServerImpl) setupOAuth2Server() {
-	aServer.OAuth2Server = oauth2.InitOAuth2Server(aServer, aServer.sessionManager)
-
+	viper.SetDefault("oauth2.enabled", true)
+	if viper.GetBool("oauth2.enabled") {
+		aServer.OAuth2Server = oauth2.InitOAuth2Server(aServer, aServer.sessionManager)
+	} else {
+		log.Info().Msg("OAuth2 is disabled")
+	}
 }
 
 func (aServer *AuthServerImpl) setupSAMLSPServer() {
-	samlSpConfig := &saml.SamlSPServerConfig{
-		Cert: "./myservice.cert",
-		Key:  "./myservice.key",
+	viper.SetDefault("saml.enabled", false)
+	if viper.GetBool("saml.enabled") {
+		samlSpConfig := &saml.SamlSPServerConfig{
+			Cert: "./myservice.cert",
+			Key:  "./myservice.key",
+		}
+
+		aServer.SamlSPServer = saml.InitSamlSPServer(aServer, samlSpConfig)
+	} else {
+		log.Info().Msg("SAML is disabled")
 	}
-
-	aServer.SamlSPServer = saml.InitSamlSPServer(aServer, samlSpConfig)
-
 }
 
 func (aServer *AuthServerImpl) start() {
@@ -143,11 +155,11 @@ func (aServer *AuthServerImpl) start() {
 // GetVolatileStorage returns configured volatile storage suitable for storing runtime
 // data such as tokens
 func (aServer *AuthServerImpl) GetVolatileStorage() auth.Storage {
-	return nil
+	return aServer.volatileStorage
 }
 
 // GetSecretsStorage returns storage where user secret (like keys, password hashes etc)
 // are stored. This storage usually composite one what solves integration problems
 func (aServer *AuthServerImpl) GetSecretsStorage() auth.Storage {
-	return nil
+	return aServer.secretsStorage
 }
