@@ -4,9 +4,6 @@ import (
 	// "net/http"
 
 	"fmt"
-	"net/http"
-
-	"github.com/google/uuid"
 
 	"github.com/buaazp/fasthttprouter"
 	"github.com/valyala/fasthttp"
@@ -19,6 +16,7 @@ import (
 	"./datastore"
 	"./oauth2"
 	"./saml"
+	"./sessions"
 )
 
 // Authentication server joining structure
@@ -26,6 +24,7 @@ type AuthServerImpl struct {
 	auth.AuthServer
 	router          *fasthttprouter.Router
 	sessionManager  auth.SessionManager
+	sessionAPI      *sessions.SessionAPI
 	OAuth2Server    *oauth2.OAuth2Server
 	SamlSPServer    *saml.SamlSPServer
 	volatileStorage auth.Storage
@@ -49,43 +48,6 @@ func (aServer *AuthServerImpl) RegisterRoute(method string, path string, handler
 	default:
 		log.Error().Msgf("Failed to register route %s %s ", method, path)
 	}
-}
-
-// Session represents security session
-// If authentication is done for a session - IsAuthenticated is true,
-// if session is ananymous - than false.
-type Session struct {
-	Id              string
-	IsAuthenticated bool
-}
-
-type SessionManagerImpl struct {
-	Sessions map[string]Session
-}
-
-func (sessions *SessionManagerImpl) StartSession(ctx interface{}) {
-	context, isFastHttpCtx := ctx.(fasthttp.RequestCtx)
-	if isFastHttpCtx {
-		context.SetUserValue("__sessionId", uuid.New().String())
-
-	} else {
-		log.Warn().Msg("unsupported context type")
-	}
-}
-
-func (sessions *SessionManagerImpl) InvalidateSession(id string) {
-	delete(sessions.Sessions, id)
-}
-
-func (sessions *SessionManagerImpl) IsAuthenticated(ctx interface{}) bool {
-	request, isHttpRequest := ctx.(http.Request)
-	if isHttpRequest {
-		authentication := request.Header.Get("Authentication")
-		_, exists := sessions.Sessions[authentication]
-		// TODO: add loading session from database
-		return exists
-	}
-	return false
 }
 
 func main() {
@@ -112,17 +74,20 @@ func (aServer *AuthServerImpl) readConfig() {
 	viper.AddConfigPath(".")
 	err := viper.ReadInConfig()
 	if err != nil {
-		panic(fmt.Errorf("Failed to read configuration: %s.\n", err))
+		panic(fmt.Errorf("failed to read configuration: %s", err))
 	}
 
 	aServer.volatileStorage = datastore.CreateVolatileDataStore(viper.GetViper())
 	aServer.secretsStorage = datastore.CreateSecretsDataStore(viper.GetViper())
-
 }
 
 func (aServer *AuthServerImpl) setupSessionManager() {
-	aServer.sessionManager = &SessionManagerImpl{}
+	aServer.sessionManager = &sessions.SessionManagerImpl{}
+	aServer.setupSessionAPI()
+}
 
+func (aServer *AuthServerImpl) setupSessionAPI() {
+	aServer.sessionAPI = sessions.SetupSessionAPI(aServer, aServer.sessionManager, nil)
 }
 
 func (aServer *AuthServerImpl) setupOAuth2Server() {
@@ -137,9 +102,11 @@ func (aServer *AuthServerImpl) setupOAuth2Server() {
 func (aServer *AuthServerImpl) setupSAMLSPServer() {
 	viper.SetDefault("saml.enabled", false)
 	if viper.GetBool("saml.enabled") {
+		viper.SetDefault("saml.cert.path", "./saml_server.cert")
+		viper.SetDefault("saml.key.path", "./saml_server.key")
 		samlSpConfig := &saml.SamlSPServerConfig{
-			Cert: "./myservice.cert",
-			Key:  "./myservice.key",
+			Cert: viper.GetString("saml.cert.path"),
+			Key:  viper.GetString("saml.key.path"),
 		}
 
 		aServer.SamlSPServer = saml.InitSamlSPServer(aServer, samlSpConfig)
@@ -149,7 +116,8 @@ func (aServer *AuthServerImpl) setupSAMLSPServer() {
 }
 
 func (aServer *AuthServerImpl) start() {
-	fasthttp.ListenAndServe(":8088", aServer.router.Handler)
+	viper.SetDefault("http_server.port", ":8088")
+	fasthttp.ListenAndServe(viper.GetString("http_server.port"), aServer.router.Handler)
 }
 
 // GetVolatileStorage returns configured volatile storage suitable for storing runtime

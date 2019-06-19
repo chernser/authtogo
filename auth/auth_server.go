@@ -21,10 +21,10 @@ type AuthServer interface {
 // SessionManager - manages sessions. Thats it.
 type SessionManager interface {
 	// StartSession generates new session id and registers appropriate internal structures
-	StartSession(context interface{})
+	StartSession(context interface{}) error
 
 	// InvalidateSession removes session by id from all auth related stores
-	InvalidateSession(id string)
+	InvalidateSession(context interface{}) error
 
 	// IsAuthenticated returns true if context contains information about authenticated session
 	IsAuthenticated(context interface{}) bool
@@ -47,4 +47,11 @@ type Storage interface {
 
 	// Delete removes record from store.
 	Delete(rowID string) bool
+}
+
+// SecretsValidator checks secret for validity
+// Commonly it is used to validate passwords and certificates
+type SecretsValidator interface {
+	// IsValidSecret checks what secret belongs to owner
+	IsValidSecret(sType string, owner string, secret []byte) (bool, error)
 }
