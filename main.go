@@ -35,7 +35,7 @@ type AuthServerImpl struct {
 func (aServer *AuthServerImpl) RegisterRoute(method string, path string, handler fasthttp.RequestHandler) {
 
 	wrappedHandler := func(ctx *fasthttp.RequestCtx) {
-		aServer.sessionManager.StartSession(ctx)
+		// aServer.sessionManager.StartSession(ctx)
 		handler(ctx)
 	}
 
@@ -82,11 +82,7 @@ func (aServer *AuthServerImpl) readConfig() {
 }
 
 func (aServer *AuthServerImpl) setupSessionManager() {
-	aServer.sessionManager = &sessions.SessionManagerImpl{}
-	aServer.setupSessionAPI()
-}
-
-func (aServer *AuthServerImpl) setupSessionAPI() {
+	aServer.sessionManager = sessions.NewSessionManager(aServer.GetVolatileStorage())
 	aServer.sessionAPI = sessions.SetupSessionAPI(aServer, aServer.sessionManager, nil)
 }
 

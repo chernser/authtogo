@@ -66,3 +66,11 @@ func (manager *SessionManagerImpl) IsAuthenticated(context interface{}) bool {
 
 	return false
 }
+
+// NewSessionManager - creates new session manager
+func NewSessionManager(sessionStorage auth.Storage) auth.SessionManager {
+	manager := &SessionManagerImpl{
+		sessionsStorage: sessionStorage,
+	}
+	return manager
+}
