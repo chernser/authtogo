@@ -5,4 +5,5 @@ storage:
   volatile:
     type: mem
   secrets:
+    content_file: "./secrets_for_test.json"
     type: mem

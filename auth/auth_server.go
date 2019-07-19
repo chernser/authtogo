@@ -37,13 +37,13 @@ type SessionManager interface {
 type Storage interface {
 
 	// Get returns mapped values for row with rowId
-	Get(rowID string, fields []string) (map[string]string, bool)
+	Get(rowID string, fields []string) (map[string]interface{}, bool)
 
 	// Insert records row under rowID and with provided values. Returns true if success
-	Insert(rowID string, values map[string]string) bool
+	Insert(rowID string, values map[string]interface{}) bool
 
 	// Update records new values in the row.
-	Update(rowID string, values map[string]string) bool
+	Update(rowID string, values map[string]interface{}) bool
 
 	// Delete removes record from store.
 	Delete(rowID string) bool

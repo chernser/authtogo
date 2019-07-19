@@ -10,3 +10,28 @@ with custom DB schema and easily can be adopted.
 
 philosophy behind the project: everything is packed and ready to 
 be "eaten". 
+
+
+Authentication flows
+====================
+
+
+Password (secret) OAuth2
+------------------------
+
+https://www.oauth.com/oauth2-servers/access-tokens/password-grant/
+
+In terms of OAuth2 - it means get token by providing username and password. 
+Main use case is login end user. 
+
+If you are building your own Identity Provider or similar thing, it may require to 
+authenticat some mobild application before granting access to some other application. 
+
+Another use case may be just login page: 
+    1. User accesses login page and sends credentials 
+    2. Server running the login page adds token to its request to the Auth Server 
+    3. Auth server verifies that login request is done from trusted application and generates token
+        for user web application. 
+
+    
+
