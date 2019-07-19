@@ -12,11 +12,11 @@ import (
 
 	"github.com/spf13/viper"
 
-	"./auth"
-	"./datastore"
-	"./oauth2"
-	"./saml"
-	"./sessions"
+	"github.com/chernser/authtogo/auth"
+	"github.com/chernser/authtogo/datastore"
+	"github.com/chernser/authtogo/oauth2"
+	"github.com/chernser/authtogo/saml"
+	"github.com/chernser/authtogo/sessions"
 )
 
 // Authentication server joining structure

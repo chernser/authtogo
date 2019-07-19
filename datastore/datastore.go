@@ -1,7 +1,7 @@
 package datastore
 
 import (
-	"../auth"
+	"github.com/chernser/authtogo/auth"
 	"github.com/spf13/viper"
 )
 

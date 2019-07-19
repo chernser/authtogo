@@ -15,7 +15,7 @@ import (
 	"gopkg.in/oauth2.v3/server"
 	"gopkg.in/oauth2.v3/store"
 
-	"../auth"
+	"github.com/chernser/authtogo/auth"
 )
 
 // OAuth2Server describes authentication server for oauth2

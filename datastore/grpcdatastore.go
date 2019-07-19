@@ -3,8 +3,7 @@ package datastore
 import (
 	context "context"
 
-	_ "../auth"
-	grpcds "../grpcdatastore"
+	grpcds "github.com/chernser/authtogo/grpcdatastore"
 	grpc "google.golang.org/grpc"
 )
 

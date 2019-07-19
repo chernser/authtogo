@@ -6,7 +6,7 @@ import (
 	"mime"
 	"net/http"
 
-	"../auth"
+	"github.com/chernser/authtogo/auth"
 	"github.com/rs/zerolog/log"
 	"github.com/valyala/fasthttp"
 )

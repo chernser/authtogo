@@ -7,7 +7,7 @@ import (
 
 	"github.com/valyala/fasthttp"
 
-	"../auth"
+	"github.com/chernser/authtogo/auth"
 )
 
 const authCookieKey = "authS"

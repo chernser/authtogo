@@ -2,8 +2,6 @@ package datastore
 
 import (
 	"sync"
-
-	_ "../auth"
 )
 
 type InMemoryStorage struct {

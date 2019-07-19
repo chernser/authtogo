@@ -11,7 +11,7 @@ import (
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fasthttp/fasthttpadaptor"
 
-	"../auth"
+	"github.com/chernser/authtogo/auth"
 )
 
 type SamlSPServerConfig struct {
