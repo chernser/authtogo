@@ -14,6 +14,7 @@ import (
 
 	"github.com/chernser/authtogo/auth"
 	"github.com/chernser/authtogo/datastore"
+	"github.com/chernser/authtogo/login"
 	"github.com/chernser/authtogo/oauth2"
 	"github.com/chernser/authtogo/saml"
 	"github.com/chernser/authtogo/sessions"
@@ -62,6 +63,7 @@ func main() {
 	aServer.setupOAuth2Server()
 	aServer.setupSAMLSPServer()
 
+	aServer.setupLogin()
 	aServer.start()
 }
 
@@ -109,6 +111,10 @@ func (aServer *AuthServerImpl) setupSAMLSPServer() {
 	} else {
 		log.Info().Msg("SAML is disabled")
 	}
+}
+
+func (aServer *AuthServerImpl) setupLogin() {
+	login.InitLogin(aServer, aServer.sessionManager)
 }
 
 func (aServer *AuthServerImpl) start() {

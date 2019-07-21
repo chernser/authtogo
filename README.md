@@ -11,10 +11,13 @@ with custom DB schema and easily can be adopted.
 philosophy behind the project: everything is packed and ready to 
 be "eaten". 
 
-
 Authentication flows
 ====================
 
+Login Page (or End User Authentication)
+---------------------------------------
+
+[Oauth2 vision on end user authentication](https://oauth.net/articles/authentication/)
 
 Password (secret) OAuth2
 ------------------------
