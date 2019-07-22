@@ -17,6 +17,7 @@ Authentication flows
 Login Page (or End User Authentication)
 ---------------------------------------
 
+[Password hashing and Salting](https://www.maketecheasier.com/password-hashing-encryption/)
 [Oauth2 vision on end user authentication](https://oauth.net/articles/authentication/)
 
 Password (secret) OAuth2
