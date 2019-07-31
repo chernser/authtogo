@@ -63,6 +63,16 @@ func (loginPage *LoginPage) handleWebFormLogin(w http.ResponseWriter, r *http.Re
 	http.Redirect(w, r, "/auth/login/form.html?error=401;msg=InvalidAuthentication", http.StatusTemporaryRedirect)
 }
 
+func (loginPage *LoginPage) checkLoginStatus(w http.ResponseWriter, r *http.Request) {
+
+	if !loginPage.sessionManager.IsAuthenticated(r) {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	w.Write([]byte("OK"))
+}
+
 func InitLogin(aServer auth.AuthServer, sessionManager auth.SessionManager) error {
 	log.Info().Msg("InitLogin")
 	var loginPage = &LoginPage{aServer, sessionManager}
@@ -77,6 +87,7 @@ func InitLogin(aServer auth.AuthServer, sessionManager auth.SessionManager) erro
 	}
 
 	aServer.RegisterRoute("GET", "/auth/login/form.html", loginPageHTMLHandler.NewRequestHandler())
+	aServer.RegisterRoute("GET", "/auth/login/status", fasthttpadaptor.NewFastHTTPHandlerFunc(loginPage.checkLoginStatus))
 	return nil
 }
 

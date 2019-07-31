@@ -80,7 +80,7 @@ func (manager *SessionManagerImpl) IsAuthenticated(context interface{}) bool {
 		return false
 	}
 
-	return false
+	return true
 }
 
 // NewSessionManager - creates new session manager
