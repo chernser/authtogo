@@ -4,13 +4,16 @@ import (
 	"errors"
 
 	"net/http"
+	"time"
 
 	"github.com/valyala/fasthttp"
 
 	"github.com/chernser/authtogo/auth"
+	"github.com/rs/zerolog/log"
+	"github.com/segmentio/ksuid"
 )
 
-const authCookieKey = "authS"
+const authCookieKey = "auth-session"
 
 // SessionManagerImpl is implementation of session manager able to work with fasthttp context
 type SessionManagerImpl struct {
@@ -19,18 +22,22 @@ type SessionManagerImpl struct {
 
 // StartSession generates new session id and registers appropriate internal structures
 func (manager *SessionManagerImpl) StartSession(context interface{}) error {
-	ctx, ok := context.(*fasthttp.RequestCtx)
+	ctx, ok := context.(http.ResponseWriter)
 	if !ok {
+		log.Error().Msgf("Failed to start session")
 		return errors.New("Failed to start session")
 	}
 
-	authCookie := &fasthttp.Cookie{}
-	authCookie.SetSecure(true)
-	authCookie.SetHTTPOnly(true)
-	authCookie.SetKey(authCookieKey)
-	authCookie.SetMaxAge(180000)
-	ctx.Response.Header.SetCookie(authCookie)
-	ctx.Response.SetStatusCode(http.StatusNoContent)
+	authToken, _ := ksuid.NewRandom()
+	authCookie := &http.Cookie{Name: authCookieKey, Expires: time.Now().Add(time.Minute * 2),
+		HttpOnly: true, Value: authToken.String(), Path: "/",
+	}
+
+	http.SetCookie(ctx, authCookie)
+	log.Info().Msgf("Starting session with id %s", authToken.String())
+	session := make(map[string]interface{})
+	session["created_at"] = 0
+	manager.sessionsStorage.Insert(authToken.String(), session)
 	return nil
 }
 
@@ -49,17 +56,26 @@ func (manager *SessionManagerImpl) InvalidateSession(context interface{}) error 
 
 // IsAuthenticated returns true if context contains information about authenticated session
 func (manager *SessionManagerImpl) IsAuthenticated(context interface{}) bool {
-	ctx, ok := context.(*fasthttp.RequestCtx)
+	log.Debug().Msg("Is Authenticated")
+	ctx, ok := context.(*http.Request)
 	if !ok {
+		log.Error().Msgf("Unsupported context")
 		return false
 	}
 
-	authCookie := ctx.Request.Header.Cookie(authCookieKey)
-	if authCookie != nil {
+	authCookie, err := ctx.Cookie(authCookieKey)
+	if err != nil {
+		log.Error().Err(err)
 		return false
 	}
 
-	_, exists := manager.sessionsStorage.Get(string(authCookie), []string{"created_at"})
+	if authCookie == nil {
+		log.Debug().Msg("No authentication cookie")
+		return false
+	}
+
+	log.Info().Msgf("Security cookie: %s", authCookie.Value)
+	_, exists := manager.sessionsStorage.Get(string(authCookie.Value), []string{"created_at"})
 	if !exists {
 		return false
 	}

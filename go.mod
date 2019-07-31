@@ -9,6 +9,7 @@ require (
 	github.com/golang/protobuf v1.3.1
 	github.com/rs/zerolog v1.14.3
 	github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7 // indirect
+	github.com/segmentio/ksuid v1.0.2
 	github.com/spf13/viper v1.4.0
 	github.com/stretchr/testify v1.2.2
 	github.com/valyala/fasthttp v1.4.0

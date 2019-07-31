@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"github.com/chernser/authtogo/auth"
+
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 )
@@ -10,7 +11,7 @@ import (
 func CreateVolatileDataStore(conf *viper.Viper) auth.Storage {
 	storageType := conf.GetString("storage.volatile.type")
 	if storageType == "mem" {
-		return &InMemoryStorage{}
+		return CreateMemoryStorage()
 	}
 	return nil
 }

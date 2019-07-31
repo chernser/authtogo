@@ -7,6 +7,7 @@ import (
 	"errors"
 	"hash"
 	"net/http"
+	"strings"
 
 	"github.com/valyala/fasthttp"
 	//	"github.com/valyala/fasthttp/fasthttpadaptor"
@@ -25,6 +26,11 @@ type LoginPage struct {
 func (loginPage *LoginPage) handleWebFormLogin(w http.ResponseWriter, r *http.Request) {
 	log.Debug().Msg("Handling WebFormLogin")
 
+	if loginPage.sessionManager.IsAuthenticated(r) {
+		http.Redirect(w, r, "/auth/", http.StatusTemporaryRedirect)
+		return
+	}
+
 	var password = r.FormValue("password")
 	var userID = r.FormValue("userId")
 
@@ -42,7 +48,9 @@ func (loginPage *LoginPage) handleWebFormLogin(w http.ResponseWriter, r *http.Re
 			salt = userInfo["salt"].(string)
 		}
 		match, err := doPasswordMatch(password, userInfo["password_hash"].(string), userInfo["hash_func"].(string), salt)
-		if err == nil && match {
+		if match && err == nil {
+			loginPage.sessionManager.StartSession(w)
+			log.Info().Msgf("Password match. Authenticated user %s", userID)
 			http.Redirect(w, r, "/auth/", http.StatusTemporaryRedirect)
 			return
 		} else if err != nil {
@@ -84,9 +92,9 @@ func doPasswordMatch(input string, password string, algorithm string, salt strin
 		return false, errors.New("Unknown hash algorithm")
 	}
 
-	hashedInput := hashFunc.Sum([]byte(input))
-	hexStr := hex.EncodeToString(hashedInput[len([]byte(input)):])
-	// log.Info().Msgf("Hashed input(%s) %s \n %s ", input, hexStr, password)
+	hashFunc.Write([]byte(input))
+	hexStr := hex.EncodeToString(hashFunc.Sum(nil))
+	log.Info().Msgf("Hashed input(%s) %s : %s ", input, hexStr, password)
 
-	return hexStr == password, nil
+	return hexStr == strings.TrimSpace(password), nil
 }
