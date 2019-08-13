@@ -13,6 +13,8 @@ require (
 	github.com/spf13/viper v1.4.0
 	github.com/stretchr/testify v1.2.2
 	github.com/valyala/fasthttp v1.4.0
+	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	google.golang.org/grpc v1.21.0
 	gopkg.in/oauth2.v3 v3.10.0
+	gotest.tools v2.2.0+incompatible
 )

@@ -29,7 +29,8 @@ type OAuth2Server struct {
 func (srv *OAuth2Server) handleOauth2Authorize(w http.ResponseWriter, r *http.Request) {
 	log.Debug().Msg("Handling OAuth2 authorize request")
 
-	if srv.sessionManager.IsAuthenticated(r) {
+	if !srv.sessionManager.IsAuthenticated(r) {
+		log.Info().Msg("Request from unauthenticated session")
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 	} else {
 		err := srv.impl.HandleAuthorizeRequest(w, r)
@@ -50,6 +51,7 @@ func InitOAuth2Server(aServer auth.AuthServer, sessionManager auth.SessionManage
 	log.Info().Msg("Init OAuth2 Server")
 
 	oauthServer := &OAuth2Server{}
+	oauthServer.sessionManager = sessionManager
 	oauthServer.setupTokenStorage(aServer.GetVolatileStorage())
 	oauthServer.setupSecretsStorage(aServer.GetSecretsStorage())
 	oauthServer.setupImpl()
