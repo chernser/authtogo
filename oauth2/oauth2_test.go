@@ -84,6 +84,13 @@ func TestAuthorization(t *testing.T) {
 	server.VolatileStorage = datastore.CreateMemoryStorage()
 	server.SecretsStorage = datastore.CreateMemoryStorage()
 
+	row := map[string]interface{}{
+		"userId": "11111",
+		"domain": "http://localhost",
+		"secret": "999999",
+	}
+	server.SecretsStorage.Insert("11111", row)
+
 	sessMgr := &mockSessionManager{IsAuthorizedSession: true}
 
 	oauthServer := InitOAuth2Server(server, sessMgr)
@@ -91,19 +98,9 @@ func TestAuthorization(t *testing.T) {
 
 	client, err := utils.ApiClient(netListener, router)
 	assert.NilError(t, err, "Failed to get API client")
-	// regRequest := struct {
-	// 	Username string
-	// 	Password string
-	// 	Email    string
-	// }{
-	// 	Username: "test_user_1",
-	// 	Password: "1q2w3e",
-	// 	Email:    "valid_email@gmail1.com",
-	// }
-
 	clentCfg := &clientcredentials.Config{
-		ClientID:     "000000",
-		ClientSecret: "9999991",
+		ClientID:     "11111",
+		ClientSecret: "999999",
 		TokenURL:     "http://localhost/auth/oauth2/token",
 	}
 
@@ -111,8 +108,6 @@ func TestAuthorization(t *testing.T) {
 	fmt.Printf("context: %v\n", ctx)
 	token, err := clentCfg.Token(ctx)
 	assert.NilError(t, err)
-	assert.Equal(t, nil, token)
-
-	// regResp := utils.DO_POST("http://localtest/auth/oauth2/authorize", regRequest, http.StatusOK, client, t)
-	// fmt.Printf("Stored account id: %v ", regResp)
+	assert.Assert(t, token.Valid())
+	assert.Assert(t, token.AccessToken != "")
 }

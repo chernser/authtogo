@@ -69,13 +69,14 @@ func (srv *OAuth2Server) setupImpl() {
 	manager.MustTokenStorage(store.NewMemoryTokenStore())
 
 	// client memory store
-	clientStore := store.NewClientStore()
-	clientStore.Set("000000", &models.Client{
-		ID:     "000000",
-		Secret: "999999",
-		Domain: "http://localhost",
-	})
-	manager.MapClientStorage(clientStore)
+	// clientStore := store.NewClientStore()
+	// clientStore.Set("000000", &models.Client{
+	// 	ID:     "000000",
+	// 	Secret: "999999",
+	// 	Domain: "http://localhost",
+	// })
+
+	manager.MapClientStorage(srv.clientStore)
 
 	srvImpl := server.NewDefaultServer(manager)
 	srvImpl.SetAllowGetAccessRequest(true)
@@ -114,8 +115,17 @@ type clientStoreImpl struct {
 }
 
 func (store *clientStoreImpl) GetByID(id string) (oauth2.ClientInfo, error) {
+	row, exists := store.Storage.Get(id, []string{})
+	if !exists {
+		log.Warn().Msgf("Failed to fetch client info for %s", id)
+		return nil, errors.ErrInvalidClient
+	}
 
-	// info := &oauth2.ClientInfo{}
-
-	return nil, nil
+	return &models.Client{
+			ID:     id,
+			Secret: row["secret"].(string),
+			Domain: row["domain"].(string),
+			UserID: row["userId"].(string),
+		},
+		nil
 }
