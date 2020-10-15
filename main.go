@@ -91,7 +91,10 @@ func (aServer *AuthServerImpl) setupSessionManager() {
 func (aServer *AuthServerImpl) setupOAuth2Server() {
 	viper.SetDefault("oauth2.enabled", true)
 	if viper.GetBool("oauth2.enabled") {
-		aServer.OAuth2Server = oauth2.InitOAuth2Server(aServer, aServer.sessionManager)
+		config := &oauth2.OAuth2ServerConfiguration{}
+		config.ClientStore = aServer.GetSecretsStorage()
+		config.TokenStore = aServer.GetVolatileStorage()
+		aServer.OAuth2Server = oauth2.InitOAuth2Server(aServer, aServer.sessionManager, config)
 	} else {
 		log.Info().Msg("OAuth2 is disabled")
 	}

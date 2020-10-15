@@ -3,9 +3,6 @@ package oauth2
 import (
 	"net/http"
 
-	//	"github.com/valyala/fasthttp"
-	//	"github.com/valyala/fasthttp/fasthttpadaptor"
-
 	"github.com/rs/zerolog/log"
 	"github.com/valyala/fasthttp/fasthttpadaptor"
 	"gopkg.in/oauth2.v3"
@@ -18,6 +15,12 @@ import (
 	"github.com/chernser/authtogo/auth"
 )
 
+// OAuth2ServerConfiguration - defines oauth2 module configuration
+type OAuth2ServerConfiguration struct {
+	TokenStore  auth.Storage
+	ClientStore auth.Storage
+}
+
 // OAuth2Server describes authentication server for oauth2
 type OAuth2Server struct {
 	impl           *server.Server
@@ -26,6 +29,7 @@ type OAuth2Server struct {
 	clientStore    oauth2.ClientStore
 }
 
+// handleOAuth2Authorize - handles authentication.
 func (srv *OAuth2Server) handleOauth2Authorize(w http.ResponseWriter, r *http.Request) {
 	log.Debug().Msg("Handling OAuth2 authorize request")
 
@@ -45,19 +49,23 @@ func (srv *OAuth2Server) handleOauth2Token(w http.ResponseWriter, r *http.Reques
 	srv.impl.HandleTokenRequest(w, r)
 }
 
+func (srv *OAuth2Server) handleOauth2RefreshToken(w http.ResponseWriter, r *http.Request) {
+	log.Debug().Msg("Handle refresh token request")
+}
+
 // InitOAuth2Server - Initializes OAuth2 module to authorize
 // requires auth.AuthServer to register routes and auth.SessionManager to register sessions
-func InitOAuth2Server(aServer auth.AuthServer, sessionManager auth.SessionManager) *OAuth2Server {
+func InitOAuth2Server(aServer auth.AuthServer, sessionManager auth.SessionManager, config *OAuth2ServerConfiguration) *OAuth2Server {
 	log.Info().Msg("Init OAuth2 Server")
 
 	oauthServer := &OAuth2Server{}
 	oauthServer.sessionManager = sessionManager
-	oauthServer.setupTokenStorage(aServer.GetVolatileStorage())
-	oauthServer.setupSecretsStorage(aServer.GetSecretsStorage())
+	oauthServer.setupTokenStorage(config.TokenStore)
+	oauthServer.setupSecretsStorage(config.ClientStore)
 	oauthServer.setupImpl()
 
 	aServer.RegisterRoute("POST", "/auth/oauth2/authorize", fasthttpadaptor.NewFastHTTPHandlerFunc(oauthServer.handleOauth2Authorize))
-	aServer.RegisterRoute("POST", "/auth/oauth2/token", fasthttpadaptor.NewFastHTTPHandlerFunc(oauthServer.handleOauth2Token))
+	aServer.RegisterRoute("POST", "/auth/oauth2/access_token", fasthttpadaptor.NewFastHTTPHandlerFunc(oauthServer.handleOauth2Token))
 
 	return oauthServer
 }
@@ -94,9 +102,9 @@ func (srv *OAuth2Server) setupImpl() {
 }
 
 func (srv *OAuth2Server) setupTokenStorage(volatileStorage auth.Storage) {
-	// srv.tokenStore = &tokenStoreImpl{
-	// 	Storage: volatileStorage,
-	// }
+	srv.tokenStore = &tokenStoreImpl{
+		Storage: volatileStorage,
+	}
 }
 
 func (srv *OAuth2Server) setupSecretsStorage(storage auth.Storage) {
@@ -105,8 +113,43 @@ func (srv *OAuth2Server) setupSecretsStorage(storage auth.Storage) {
 	}
 }
 
+// tokenStoreImpl is adapter for oauth2 token store
 type tokenStoreImpl struct {
 	Storage auth.Storage
+}
+
+func (store *tokenStoreImpl) Create(info oauth2.TokenInfo) error {
+
+}
+
+// delete the authorization code
+func (store *tokenStoreImpl) RemoveByCode(code string) error {
+	return nil
+}
+
+// use the access token to delete the token information
+func (store *tokenStoreImpl) RemoveByAccess(access string) error {
+	return nil
+}
+
+// use the refresh token to delete the token information
+func (store *tokenStoreImpl) RemoveByRefresh(refresh string) error {
+	return nil
+}
+
+// use the authorization code for token information data
+func (store *tokenStoreImpl) GetByCode(code string) (oauth2.TokenInfo, error) {
+	return nil, nil
+}
+
+// use the access token for token information data
+func (store *tokenStoreImpl) GetByAccess(access string) (oauth2.TokenInfo, error) {
+	return nil, nil
+}
+
+// use the refresh token for token information data
+func (store *tokenStoreImpl) GetByRefresh(refresh string) (oauth2.TokenInfo, error) {
+	return nil, nil
 }
 
 // clientStoreImpl is adapter between oauth2 store and auth store
